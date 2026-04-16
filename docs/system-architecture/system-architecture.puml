@@ -1,0 +1,75 @@
+@startuml
+!theme spacelab
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 50
+
+title AI-Powered Technical Interview Assistant - System Architecture
+
+' --- Actors ---
+actor "Recruiter / Candidate" as User
+
+' --- Layers ---
+package "Presentation Layer" #aliceblue {
+    component [Angular Frontend] as UI #lightblue
+}
+
+package "Infrastructure Layer" #whitesmoke {
+    component [Eureka Server\n(Discovery - 8761)] as Eureka #lightgrey
+    component [API Gateway\n(DGS / GraphQL - 8080)] as Gateway #coral
+}
+
+package "Business Logic Layer" #ivory {
+    ' Sắp xếp ngang hàng
+    component [Identity Service\n(Auth / RBAC)\n(8081)] as Identity #wheat
+    component [Candidate Service\n(Profile / CV)\n(8082)] as Candidate #wheat
+    component [Interview Service\n(JD / Scoring)\n(8083)] as Interview #wheat
+}
+
+package "Intelligence Layer" #honeydew {
+    component [Spring AI / LLM API\n(Gemini / OpenAI)] as AI_Engine #lightgreen
+}
+
+package "Data Persistence Layer" #ghostwhite {
+    database "Redis (6337)" as Redis #pink
+
+    database "PostgreSQL (5433)" as DB_Server {
+        folder "identity_schema" as ID_DB
+        folder "candidate_schema" as CAN_DB
+        folder "interview_schema" as INT_DB
+    }
+}
+
+' --- Layout Positioning (Hidden lines to force side-by-side) ---
+Identity -[hidden]right- Candidate
+Candidate -[hidden]right- Interview
+ID_DB -[hidden]right- CAN_DB
+CAN_DB -[hidden]right- INT_DB
+
+' --- Flows & Interactions ---
+User --> UI
+UI --> Gateway : " GraphQL Query "
+
+' Service Discovery
+Gateway <..> Eureka : " Lookup "
+Identity .up.> Eureka : " Register "
+Candidate .up.> Eureka : " Register "
+Interview .up.> Eureka : " Register "
+
+' API Routing
+Gateway -down-> Identity
+Gateway -down-> Candidate
+Gateway -down-> Interview
+
+' Special Logic
+Interview -right-> AI_Engine : " Prompting "
+Identity -right-> Redis : " Session Store "
+
+' Database Mapping
+Identity --down--> ID_DB : " JPA "
+Candidate --down--> CAN_DB : " JPA "
+Interview --down--> INT_DB : " JPA "
+
+@enduml

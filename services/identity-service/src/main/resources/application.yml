@@ -36,6 +36,10 @@ spring:
 
   session:
     store-type: redis
+    timeout: 3600s
+    redis:
+      flush-mode: on_save
+      namespace: "interview:session"
 
 eureka:
   client:
