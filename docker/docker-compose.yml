@@ -4,14 +4,15 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: interview-postgres
-    ports:
-      - "5432:5432"
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: 1234
+      POSTGRES_USER: namdx
+      POSTGRES_PASSWORD: password123
       POSTGRES_DB: interview_db
+    ports:
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
 
   redis:
     image: redis:7-alpine

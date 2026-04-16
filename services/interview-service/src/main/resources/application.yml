@@ -1,0 +1,33 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: interview-service
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/interview_db
+    username: namdx
+    password: password123
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: interview_schema
+
+  flyway:
+    enabled: true
+    create-schemas: true
+    schemas: interview_schema
+    default-schema: interview_schema
+    locations: classpath:db/migration
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

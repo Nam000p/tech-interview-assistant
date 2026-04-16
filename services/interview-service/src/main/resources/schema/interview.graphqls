@@ -1,0 +1,9 @@
+type Query {
+    sessions: [InterviewSession]
+}
+
+type InterviewSession {
+    id: ID
+    status: String
+    createdAt: String
+}

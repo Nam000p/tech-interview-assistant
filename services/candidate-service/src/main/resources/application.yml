@@ -1,0 +1,37 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: candidate-service
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/interview_db
+    username: namdx
+    password: password123
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: candidate_schema
+
+  flyway:
+    enabled: true
+    create-schemas: true
+    schemas: candidate_schema
+    default-schema: candidate_schema
+    locations: classpath:db/migration
+
+dgs:
+  graphql:
+    path: /graphql
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
