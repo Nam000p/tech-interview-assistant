@@ -7,7 +7,7 @@ import jakarta.persistence.Table;
 import lombok.*;
 
 @Entity
-@Table(name = "permissions", schema = "identity_schema")
+@Table(name = "permissions")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,8 +16,8 @@ import lombok.*;
 public class Permission {
     @Id
     @Column(name = "permission_id", length = 50)
-    private String id;
+    private String permissionId;
 
-    @Column(name = "description", length = 255)
+    @Column(length = 255)
     private String description;
 }

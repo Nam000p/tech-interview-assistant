@@ -8,6 +8,16 @@ spring:
     compatibility-verifier:
       enabled: false
 
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  web:
+    resources:
+      static-locations: file:/opt/uploads/resumes/, classpath:/static/
+
   datasource:
     url: jdbc:postgresql://localhost:5433/interview_db
     username: namdx

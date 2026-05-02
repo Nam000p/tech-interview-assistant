@@ -1,110 +1,150 @@
 @startuml
-title TECH INTERVIEW ASSISTANT ERD
+title TECH INTERVIEW ASSISTANT - SYSTEM ENTITY RELATIONSHIP DIAGRAM (UPDATED)
 !theme plain
-skinparam classAttributeIconSize 0
 skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
 
-package "Identity Service (Auth & RBAC)" #E3F2FD {
+package "Identity Service" #E3F2FD {
     entity "User" as user {
-        * id : UUID <<PK>>
+        - id : UUID <<PK>>
         --
-        * username : String
-        * password : String
-        * email : String
-        * createdAt : Timestamp
+        - username : VARCHAR(50)
+        - password : VARCHAR(255)
+        - email : VARCHAR(100) <<UNIQUE>>
+        - created_at : TIMESTAMPTZ
+        - updated_at : TIMESTAMPTZ
     }
 
     entity "Role" as role {
-        * id : Long <<PK>>
+        - id : SERIAL <<PK>>
         --
-        * name : String (ADMIN, RECRUITER, CANDIDATE)
+        - name : VARCHAR(20) <<UNIQUE>>
+    }
+
+    entity "Permission" as permission {
+        - permission_id : VARCHAR(50) <<PK>>
+        --
+        - description : VARCHAR(255)
     }
 
     entity "UserRole" as user_role {
-        * user_id : UUID <<FK>>
-        * role_id : Long <<FK>>
+        - user_id : UUID <<FK>>
+        - role_id : INTEGER <<FK>>
+        --
+        - PRIMARY KEY (user_id, role_id)
+    }
+
+    entity "RolePermission" as role_permission {
+        - role_id : INTEGER <<FK>>
+        - permission_id : VARCHAR(50) <<FK>>
+        --
+        - PRIMARY KEY (role_id, permission_id)
     }
 }
 
 package "Candidate Service" #F1F8E9 {
     entity "Candidate" as candidate {
-        * id : UUID <<PK>>
+        - id : UUID <<PK>>
         --
-        * user_id : UUID <<FK>>
-        * full_name : String
-        phone : String
-        current_job : String
+        - user_id : UUID <<FK>>
+        - full_name : VARCHAR(255)
+        - phone : VARCHAR(20)
+        - current_job : VARCHAR(100)
+        - updated_at : TIMESTAMPTZ
     }
 
     entity "Resume" as resume {
-        * id : UUID <<PK>>
+        - id : UUID <<PK>>
         --
-        * candidate_id : UUID <<FK>>
-        file_path : String
-        extracted_text : Text (Dùng cho Spring AI)
-        uploaded_at : Timestamp
+        - candidate_id : UUID <<FK>>
+        - file_path : VARCHAR(255)
+        - extracted_text : TEXT
+        - parsed_data : JSONB
+        - uploaded_at : TIMESTAMPTZ
+        - updated_at : TIMESTAMPTZ
     }
 
     entity "CandidateSkill" as skill {
-        * id : Long <<PK>>
+        - id : SERIAL <<PK>>
         --
-        * candidate_id : UUID <<FK>>
-        skill_name : String
-        exp_years : Integer
+        - candidate_id : UUID <<FK>>
+        - skill_name : VARCHAR(50)
+        - exp_years : INTEGER
     }
 }
 
-package "Interview Service (AI Core)" #FFFDE7 {
+package "Interview Service" #FFFDE7 {
     entity "JobDescription" as jd {
-        * id : UUID <<PK>>
+        - id : UUID <<PK>>
         --
-        * title : String
-        * content : Text
-        core_skills : String[]
+        - created_by : UUID <<FK>>
+        - title : VARCHAR(255)
+        - content : TEXT
+        - core_skills : TEXT[]
+        - updated_at : TIMESTAMPTZ
     }
 
     entity "InterviewSession" as session {
-        * id : UUID <<PK>>
+        - id : UUID <<PK>>
         --
-        * candidate_id : UUID <<FK>>
-        * jd_id : UUID <<FK>>
-        * recruiter_id : UUID <<FK>>
-        status : String (PENDING, IN_PROGRESS, COMPLETED)
-        created_at : Timestamp
+        - candidate_id : UUID <<FK>>
+        - jd_id : UUID <<FK>>
+        - recruiter_id : UUID <<FK>>
+        - status : ENUM
+        - scheduled_at : TIMESTAMPTZ
+        - created_at : TIMESTAMPTZ
+        - completed_at : TIMESTAMPTZ
+        - updated_at : TIMESTAMPTZ
     }
 
     entity "InterviewQuestion" as question {
-        * id : UUID <<PK>>
+        - id : UUID <<PK>>
         --
-        * session_id : UUID <<FK>>
-        question_text : Text
-        expected_answer : Text
-        ai_generated : Boolean
+        - session_id : UUID <<FK>>
+        - question_text : TEXT
+        - expected_answer : TEXT
+        - ai_generated : BOOLEAN
+        - time_limit : INTEGER
     }
 
     entity "InterviewEvaluation" as evaluation {
-        * id : UUID <<PK>>
+        - id : UUID <<PK>>
         --
-        * question_id : UUID <<FK>>
-        candidate_answer : Text
-        score : Integer (1-10)
-        ai_feedback : Text
+        - question_id : UUID <<FK>>
+        - candidate_answer : TEXT
+        - score : INTEGER
+        - score_details : JSONB
+        - ai_feedback : TEXT
     }
 }
 
-' Relationships
-user "1" -- "*" user_role
-role "1" -- "*" user_role
+' Identity Internal Relationships
+user ||--o{ user_role
+role ||--o{ user_role
+role ||--o{ role_permission
+permission ||--o{ role_permission
 
-candidate "1" -- "*" resume
-candidate "1" -- "*" skill
+' Candidate Internal Relationships
+candidate ||--o{ resume
+candidate ||--o{ skill
 
-jd "1" -- "*" session
-session "1" -- "*" question
-question "1" -- "1" evaluation
+' Interview Internal Relationships
+jd ||--o{ session
+session ||--o{ question
+question ||--|| evaluation
 
-' Cross-service references (logical)
-user "1" .. "1" candidate : "userId reference"
-session "1" .. "1" candidate : "candidateId reference"
+' Cross-Service Logical References
+user .[#blue]. candidate : "1:1 Reference"
+session .[#blue]. candidate : "Target"
+session .[#blue]. user : "Recruiter Reference"
+jd .[#blue]. user : "Creator Reference"
+
+note right of session::status
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+end note
 
 @enduml

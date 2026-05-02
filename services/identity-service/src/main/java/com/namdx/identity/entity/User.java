@@ -3,12 +3,13 @@ package com.namdx.identity.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users", schema = "identity_schema")
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,24 +20,24 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(unique = true, nullable = false, length = 50)
-    private String username;
+    @Column(unique = true, nullable = false, length = 100)
+    private String email;
 
     @Column(nullable = false, length = 255)
     private String password;
 
-    @Column(unique = true, nullable = false, length = 100)
-    private String email;
+    @Column(name = "full_name", nullable = false, length = 100)
+    private String fullName;
 
     @Column(name = "created_at", insertable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",
-            schema = "identity_schema",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<Role> roles;
+    @Builder.Default
+    private Set<Role> roles = new HashSet<>();
 }

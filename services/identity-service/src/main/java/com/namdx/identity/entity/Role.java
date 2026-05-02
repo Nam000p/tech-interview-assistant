@@ -1,12 +1,14 @@
 package com.namdx.identity.entity;
 
+import com.namdx.identity.enums.RoleName;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "roles", schema = "identity_schema")
+@Table(name = "roles")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,15 +19,16 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Enumerated(EnumType.STRING)
     @Column(unique = true, nullable = false, length = 20)
-    private String name;
+    private RoleName name;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-            name = "roles_permissions",
-            schema = "identity_schema",
+            name = "role_permissions",
             joinColumns = @JoinColumn(name = "role_id"),
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
-    private Set<Permission> permissions;
+    @Builder.Default
+    private Set<Permission> permissions = new HashSet<>();
 }

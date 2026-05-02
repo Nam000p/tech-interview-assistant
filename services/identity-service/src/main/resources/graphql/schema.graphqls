@@ -1,0 +1,54 @@
+enum RoleName {
+    ROLE_ADMIN
+    ROLE_RECRUITER
+    ROLE_CANDIDATE
+}
+
+type UserResponse {
+    id: ID!
+    email: String!
+    fullName: String!
+    roles: [RoleName!]!
+    permissions: [String!]!
+    createdAt: String!
+}
+
+type UserPage {
+    content: [UserResponse!]!
+    totalPage: Int!
+    totalElements: Float!
+    size: Int!
+    number: Int!
+    last: Boolean!
+    first: Boolean!
+}
+
+input RegistrationRequest {
+    fullName: String!
+    email: String!
+    password: String!
+}
+
+input LoginRequest {
+    email: String!
+    password: String!
+}
+
+type AuthResponse {
+    message: String
+    user: UserResponse
+}
+
+type Query {
+    getMyProfile: UserResponse
+
+    getAllUsers(page: Int = 0, size: Int = 10): UserPage
+}
+
+type Mutation {
+    register(request: RegistrationRequest!): UserResponse
+
+    login(request: LoginRequest!): UserResponse
+
+    logout: String
+}

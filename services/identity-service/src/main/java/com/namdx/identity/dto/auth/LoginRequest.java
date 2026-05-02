@@ -1,9 +1,21 @@
 package com.namdx.identity.dto.auth;
 
-import lombok.Data;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
-@Data
-public class LoginRequest {
-    private String email;
-    private String password;
-}
+public record LoginRequest (
+	@NotBlank(message = "Email is required!")
+	@Email(message = "Email format is invalid! (e.g user@example.com)")
+	@Size(max = 100, message = "Email cannot exceed 100 characters!")
+	String email,
+
+	@NotBlank(message = "Password is required!")
+	@Size(min = 8, max = 255, message = "Password must be between 8 and 255 characters!")
+	@Pattern(
+			regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!*()_~?-]).*$",
+			message = "Password must contain at least one digit, one lowercase, one uppercase, and one special character!"
+			)
+	String password
+) {}

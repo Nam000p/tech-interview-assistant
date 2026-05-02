@@ -2,41 +2,47 @@ package com.namdx.identity.controller;
 
 import com.namdx.identity.dto.auth.LoginRequest;
 import com.namdx.identity.dto.auth.RegistrationRequest;
-import com.namdx.identity.entity.User;
+import com.namdx.identity.dto.user.UserResponse;
 import com.namdx.identity.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.MutationMapping;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
-@RestController
-@RequestMapping("/api/v1/auth")
+@Controller
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
 
-    @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody RegistrationRequest request) {
-        User response = authService.register(request);
-        return new ResponseEntity<User>(response, HttpStatus.CREATED);
+    @MutationMapping
+    public UserResponse register(@Valid @Argument RegistrationRequest request) {
+        return authService.register(request);
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request,
-                                        HttpServletRequest servletRequest,
-                                        HttpServletResponse servletResponse) {
-        authService.login(request, servletRequest, servletResponse);
-        return new ResponseEntity<String>("Login successful. Session created in Redis.", HttpStatus.OK);
+    @MutationMapping
+    public UserResponse login(@Valid @Argument LoginRequest request) {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+
+        HttpServletRequest servletRequest = attributes.getRequest();
+        HttpServletResponse servletResponse = attributes.getResponse();
+
+        return authService.login(request, servletRequest, servletResponse);
     }
 
-    public ResponseEntity<String> logout(HttpSession session) {
-        session.invalidate();
-        return new ResponseEntity<String>("Logout successful.", HttpStatus.OK);
+    @MutationMapping
+    public String logout() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+
+        HttpSession session = attributes.getRequest().getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+        return "Logout successful.";
     }
 }

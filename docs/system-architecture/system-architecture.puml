@@ -6,7 +6,7 @@ skinparam linetype ortho
 skinparam nodesep 80
 skinparam ranksep 50
 
-title AI-Powered Technical Interview Assistant - System Architecture
+title AI-Powered Technical Interview Assistant - System Architecture (Updated)
 
 ' --- Actors ---
 actor "Recruiter / Candidate" as User
@@ -19,10 +19,10 @@ package "Presentation Layer" #aliceblue {
 package "Infrastructure Layer" #whitesmoke {
     component [Eureka Server\n(Discovery - 8761)] as Eureka #lightgrey
     component [API Gateway\n(DGS / GraphQL - 8080)] as Gateway #coral
+    component [Message Broker\n(Kafka / RabbitMQ)] as Broker #gold
 }
 
 package "Business Logic Layer" #ivory {
-    ' Sắp xếp ngang hàng
     component [Identity Service\n(Auth / RBAC)\n(8081)] as Identity #wheat
     component [Candidate Service\n(Profile / CV)\n(8082)] as Candidate #wheat
     component [Interview Service\n(JD / Scoring)\n(8083)] as Interview #wheat
@@ -33,7 +33,7 @@ package "Intelligence Layer" #honeydew {
 }
 
 package "Data Persistence Layer" #ghostwhite {
-    database "Redis (6337)" as Redis #pink
+    database "Redis (6337)\n(Session / Cache)" as Redis #pink
 
     database "PostgreSQL (5433)" as DB_Server {
         folder "identity_schema" as ID_DB
@@ -42,7 +42,7 @@ package "Data Persistence Layer" #ghostwhite {
     }
 }
 
-' --- Layout Positioning (Hidden lines to force side-by-side) ---
+' --- Layout Positioning ---
 Identity -[hidden]right- Candidate
 Candidate -[hidden]right- Interview
 ID_DB -[hidden]right- CAN_DB
@@ -50,7 +50,8 @@ CAN_DB -[hidden]right- INT_DB
 
 ' --- Flows & Interactions ---
 User --> UI
-UI --> Gateway : " GraphQL Query "
+UI --> Gateway : " GraphQL Query / Mutation "
+UI <--> Gateway : " WebSocket (AI Stream) "
 
 ' Service Discovery
 Gateway <..> Eureka : " Lookup "
@@ -58,14 +59,21 @@ Identity .up.> Eureka : " Register "
 Candidate .up.> Eureka : " Register "
 Interview .up.> Eureka : " Register "
 
-' API Routing
-Gateway -down-> Identity
-Gateway -down-> Candidate
-Gateway -down-> Interview
+' API Routing & Auth
+Gateway -right-> Redis : " Verify Session "
+Gateway -down-> Identity : " Route (Login/Register) "
+Gateway -down-> Candidate : " Route "
+Gateway -down-> Interview : " Route "
 
-' Special Logic
-Interview -right-> AI_Engine : " Prompting "
-Identity -right-> Redis : " Session Store "
+Identity -right-> Redis : " Manage Session "
+
+' AI Integration
+Interview -right-> AI_Engine : " Prompting / Stream "
+
+' Inter-service Communication
+Interview <-left-> Candidate : " FeignClient (Sync) "
+Interview -up-> Broker : " Publish Event "
+Candidate -up-> Broker : " Consume Event "
 
 ' Database Mapping
 Identity --down--> ID_DB : " JPA "

@@ -2,10 +2,15 @@ package com.namdx.identity.service.impl;
 
 import com.namdx.identity.dto.auth.LoginRequest;
 import com.namdx.identity.dto.auth.RegistrationRequest;
+import com.namdx.identity.dto.user.UserResponse;
 import com.namdx.identity.entity.Role;
 import com.namdx.identity.entity.User;
+import com.namdx.identity.enums.RoleName;
+import com.namdx.identity.mapper.UserMapper;
 import com.namdx.identity.repository.RoleRepository;
 import com.namdx.identity.repository.UserRepository;
+import com.namdx.identity.security.CustomUserDetails;
+import com.namdx.identity.security.UserPrincipal;
 import com.namdx.identity.service.AuthService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,12 +20,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Service
@@ -36,41 +42,44 @@ public class AuthServiceImpl implements AuthService {
 
     private final SecurityContextRepository securityContextRepository;
 
+    private final UserMapper userMapper;
+
     @Override
-    public User register(RegistrationRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+    @Transactional
+    public UserResponse register(RegistrationRequest request) {
+        if (userRepository.existsByEmail(request.email())) {
             throw new IllegalStateException("Email already registered!");
         }
-        Set<Role> roles = new HashSet<Role>();
-        if (request.getRoles() == null || request.getRoles().isEmpty()) {
-            roles.add(roleRepository.findByName("CANDIDATE")
-                    .orElseThrow(() -> new EntityNotFoundException("Default role not found!")));
-        } else {
-            request.getRoles().forEach(name -> {
-                roles.add(roleRepository.findByName(name)
-                        .orElseThrow(() -> new EntityNotFoundException("Role not found: " + name)));
-            });
-        }
+
+        Role candidateRole = roleRepository.findByName(RoleName.ROLE_CANDIDATE)
+                .orElseThrow(() -> new EntityNotFoundException("Default Role ROLE_CANDIDATE not found in database!"));
+
         User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .roles(roles)
+                .email(request.email())
+                .password(passwordEncoder.encode(request.password()))
+                .fullName(request.fullName())
+                .roles(Set.of(candidateRole))
                 .build();
-        return userRepository.save(user);
+
+        return userMapper.mapToResponse(userRepository.save(user));
     }
 
     @Override
-    public void login(LoginRequest request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
+    @Transactional
+    public UserResponse login(LoginRequest request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(request.email(), request.password())
             );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            SecurityContext context = SecurityContextHolder.getContext();
+            context.setAuthentication(authentication);
+            SecurityContextHolder.setContext(context);
             securityContextRepository.saveContext(SecurityContextHolder.getContext(), servletRequest, servletResponse);
+
+            UserPrincipal userPrincipal = ((CustomUserDetails) authentication.getPrincipal()).userPrincipal();
+            return userMapper.mapFromPrincipal(userPrincipal);
         } catch (Exception e) {
             throw new BadCredentialsException("Invalid email or password!");
         }
-
     }
 }

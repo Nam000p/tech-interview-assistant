@@ -4,9 +4,13 @@ server:
 spring:
   application:
     name: api-gateway
+
+  data:
+    redis:
+      host: localhost
+      port: 6337
+
   cloud:
-    compatibility-verifier:
-      enabled: false
     gateway:
       discovery:
         locator:
@@ -15,15 +19,19 @@ spring:
         - id: identity-service
           uri: lb://IDENTITY-SERVICE
           predicates:
-            - Path=/api/v1/auth/**
+            - Path=/identity/**
+          filters:
+            - RewritePath=/identity/(?<segment>.*), /$\{segment}
+
         - id: candidate-service
           uri: lb://CANDIDATE-SERVICE
           predicates:
-            - Path=/api/v1/candidates/**
+            - Path=/candidates/**
+
         - id: interview-service
           uri: lb://INTERVIEW-SERVICE
           predicates:
-            - Path=/api/v1/interviews/**
+            - Path=/interviews/**
 
 eureka:
   client:
