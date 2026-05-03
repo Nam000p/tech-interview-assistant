@@ -1,5 +1,6 @@
 package com.namdx.identity.security;
 
+import com.namdx.common.security.UserPrincipal;
 import com.namdx.identity.entity.Permission;
 import com.namdx.identity.entity.User;
 import com.namdx.identity.repository.UserRepository;
@@ -22,7 +23,7 @@ public class CustomUserDetailService implements UserDetailsService {
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
         Set<String> roles = user.getRoles().stream()
                 .map(role -> role.getName().name())
@@ -33,14 +34,13 @@ public class CustomUserDetailService implements UserDetailsService {
                 .map(Permission::getPermissionId)
                 .collect(Collectors.toSet());
 
-        UserPrincipal principal = UserPrincipal.builder()
-                .id(user.getId())
+        return UserPrincipal.builder()
+                .id(user.getId().toString())
                 .email(user.getEmail())
+                .password(user.getPassword())
                 .fullName(user.getFullName())
                 .roles(roles)
                 .permissions(permissions)
                 .build();
-
-        return new CustomUserDetails(principal, user.getPassword());
     }
 }

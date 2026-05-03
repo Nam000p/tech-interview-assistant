@@ -1,11 +1,8 @@
 package com.namdx.identity.service.impl;
 
+import com.namdx.common.security.UserPrincipal;
 import com.namdx.identity.dto.user.UserResponse;
-import com.namdx.identity.entity.User;
 import com.namdx.identity.mapper.UserMapper;
-import com.namdx.identity.repository.UserRepository;
-import com.namdx.identity.security.CustomUserDetails;
-import com.namdx.identity.security.UserPrincipal;
 import com.namdx.identity.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,8 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-    private final UserRepository userRepository;
-
+    private final com.namdx.identity.repository.UserRepository userRepository;
     private final UserMapper userMapper;
 
     @Override
@@ -32,7 +28,8 @@ public class UserServiceImpl implements UserService {
             throw new AccessDeniedException("User is not authenticated");
         }
 
-        UserPrincipal principal = ((CustomUserDetails) authentication.getPrincipal()).userPrincipal();
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+
         return userMapper.mapFromPrincipal(principal);
     }
 

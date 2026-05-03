@@ -1,5 +1,5 @@
 @startuml
-title TECH INTERVIEW ASSISTANT - SYSTEM ENTITY RELATIONSHIP DIAGRAM (UPDATED)
+title TECH INTERVIEW ASSISTANT - SYSTEM ENTITY RELATIONSHIP DIAGRAM
 !theme plain
 skinparam linetype ortho
 skinparam packageStyle rectangle
@@ -9,11 +9,10 @@ package "Identity Service" #E3F2FD {
     entity "User" as user {
         - id : UUID <<PK>>
         --
-        - username : VARCHAR(50)
-        - password : VARCHAR(255)
         - email : VARCHAR(100) <<UNIQUE>>
+        - password : VARCHAR(255)
+        - username : VARCHAR(100)
         - created_at : TIMESTAMPTZ
-        - updated_at : TIMESTAMPTZ
     }
 
     entity "Role" as role {
@@ -48,7 +47,7 @@ package "Candidate Service" #F1F8E9 {
         - id : UUID <<PK>>
         --
         - user_id : UUID <<FK>>
-        - full_name : VARCHAR(255)
+        - full_name : VARCHAR(100)
         - phone : VARCHAR(20)
         - current_job : VARCHAR(100)
         - updated_at : TIMESTAMPTZ
@@ -62,7 +61,6 @@ package "Candidate Service" #F1F8E9 {
         - extracted_text : TEXT
         - parsed_data : JSONB
         - uploaded_at : TIMESTAMPTZ
-        - updated_at : TIMESTAMPTZ
     }
 
     entity "CandidateSkill" as skill {
@@ -82,6 +80,7 @@ package "Interview Service" #FFFDE7 {
         - title : VARCHAR(255)
         - content : TEXT
         - core_skills : TEXT[]
+        - created_at : TIMESTAMPTZ
         - updated_at : TIMESTAMPTZ
     }
 
@@ -106,6 +105,7 @@ package "Interview Service" #FFFDE7 {
         - expected_answer : TEXT
         - ai_generated : BOOLEAN
         - time_limit : INTEGER
+        - created_at : TIMESTAMPTZ
     }
 
     entity "InterviewEvaluation" as evaluation {
@@ -116,6 +116,7 @@ package "Interview Service" #FFFDE7 {
         - score : INTEGER
         - score_details : JSONB
         - ai_feedback : TEXT
+        - created_at : TIMESTAMPTZ
     }
 }
 

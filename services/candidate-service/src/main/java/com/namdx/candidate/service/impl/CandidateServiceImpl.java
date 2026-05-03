@@ -1,13 +1,12 @@
 package com.namdx.candidate.service.impl;
 
-import com.namdx.candidate.dto.CandidateRequest;
-import com.namdx.candidate.dto.CandidateResponse;
+import com.namdx.candidate.dto.candidate.CandidateCreateRequest;
+import com.namdx.candidate.dto.candidate.CandidateResponse;
+import com.namdx.candidate.dto.candidate.CandidateUpdateRequest;
+import com.namdx.candidate.dto.resume.ResumeResponse;
+import com.namdx.candidate.dto.skill.SkillResponse;
 import com.namdx.candidate.entity.Candidate;
-import com.namdx.candidate.entity.CandidateSkill;
-import com.namdx.candidate.entity.Resume;
 import com.namdx.candidate.repository.CandidateRepository;
-import com.namdx.candidate.repository.CandidateSkillRepository;
-import com.namdx.candidate.repository.ResumeRepository;
 import com.namdx.candidate.service.CandidateService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -22,99 +21,90 @@ import java.util.UUID;
 public class CandidateServiceImpl implements CandidateService {
     private final CandidateRepository candidateRepository;
 
-    private final CandidateSkillRepository skillRepository;
-
-    private final ResumeRepository resumeRepository;
-
     @Override
     @Transactional
-    public CandidateResponse createProfile(CandidateRequest request) {
+    public CandidateResponse createProfile(CandidateCreateRequest request, UUID uuid) {
+        if (candidateRepository.findByUserId(uuid).isPresent()) {
+            throw new IllegalStateException("Candidate profile already exists for this user!");
+        }
+
         Candidate candidate = Candidate.builder()
-                .userId(request.getUserId())
-                .fullName(request.getFullName())
-                .phone(request.getPhone())
-                .currentJobTitle(request.getCurrentJobTitle())
+                .userId(uuid)
+                .fullName(request.fullName())
+                .phone(request.phone())
+                .currentJob(request.currentJob())
                 .build();
-        Candidate savedCandidate = candidateRepository.save(candidate);
-        saveSkills(savedCandidate, request.getSkills());
-        return mapToResponse(savedCandidate);
+
+        return mapToResponse(candidateRepository.save(candidate));
     }
 
     @Override
     @Transactional(readOnly = true)
     public CandidateResponse getProfileById(UUID id) {
-        Candidate candidate = candidateRepository.findById(id)
+        return candidateRepository.findById(id)
+                .map(this::mapToResponse)
                 .orElseThrow(() -> new EntityNotFoundException("Candidate not found!"));
-        return mapToResponse(candidate);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CandidateResponse getProfileByUserId(UUID userId) {
-        Candidate candidate = candidateRepository.findByUserId(userId)
+        return candidateRepository.findByUserId(userId)
+                .map(this::mapToResponse)
                 .orElseThrow(() -> new EntityNotFoundException("Candidate profile not found!"));
-        return mapToResponse(candidate);
     }
 
     @Override
     @Transactional
-    public CandidateResponse updateProfile(UUID id, CandidateRequest request) {
+    public CandidateResponse updateProfile(UUID id, CandidateUpdateRequest request) {
         Candidate candidate = candidateRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Candidate not found!"));
-        candidate.setFullName(request.getFullName());
-        candidate.setPhone(request.getPhone());
-        candidate.setCurrentJobTitle(request.getCurrentJobTitle());
 
-        skillRepository.deleteByCandidateId(id);
-        saveSkills(candidate, request.getSkills());
+        candidate.setFullName(request.fullName());
+        candidate.setPhone(request.phone());
+        candidate.setCurrentJob(request.currentJob());
+
         return mapToResponse(candidateRepository.save(candidate));
     }
 
     @Override
     @Transactional
-    public void deleteProfile(UUID id) {
+    public void deleteProfile(UUID id, String principalId) {
         if (!candidateRepository.existsById(id)) {
             throw new EntityNotFoundException("Candidate not found!");
         }
         candidateRepository.deleteById(id);
     }
 
-    @Override
-    @Transactional
-    public void uploadResume(UUID candidateId, String filePath, String extractedText) {
-        Candidate candidate = candidateRepository.findById(candidateId)
-                .orElseThrow(() -> new EntityNotFoundException("Candidate not found!"));
-        Resume resume = Resume.builder()
-                .candidate(candidate)
-                .filePath(filePath)
-                .extractedText(extractedText)
-                .build();
-        resumeRepository.save(resume);
-    }
-
-    private void saveSkills(Candidate candidate, List<String> skillNames) {
-        if (skillNames == null || skillNames.isEmpty()) {
-            return;
-        }
-        List<CandidateSkill> skills = skillNames.stream()
-                .map(name -> CandidateSkill.builder()
-                        .candidate(candidate)
-                        .skillName(name)
-                        .build())
-                .toList();
-        skillRepository.saveAll(skills);
-    }
-
     private CandidateResponse mapToResponse(Candidate candidate) {
-        CandidateResponse response = new CandidateResponse();
-        response.setId(candidate.getId());
-        response.setUserId(candidate.getUserId());
-        response.setFullName(candidate.getFullName());
-        response.setPhone(candidate.getPhone());
-        response.setCurrentJobTitle(candidate.getCurrentJobTitle());
-        response.setSkills(candidate.getSkills().stream()
-                .map(CandidateSkill::getSkillName)
-                .toList());
-        return response;
+        List<ResumeResponse> resumeResponses = (candidate.getResumes() == null) ? List.of() :
+                candidate.getResumes().stream()
+                        .map(r -> ResumeResponse.builder()
+                                .id(r.getId())
+                                .filePath(r.getFilePath())
+                                .extractedText(r.getExtractedText())
+                                .parsedData(r.getParsedData())
+                                .uploadedAt(r.getUploadedAt())
+                                .build())
+                        .toList();
+
+        List<SkillResponse> skillResponses = (candidate.getSkills() == null) ? List.of() :
+                candidate.getSkills().stream()
+                        .map(s -> new SkillResponse(
+                                s.getId(),
+                                s.getSkillName(),
+                                s.getExpYears()
+                        ))
+                        .toList();
+
+        return CandidateResponse.builder()
+                .id(candidate.getId())
+                .userId(candidate.getUserId())
+                .fullName(candidate.getFullName())
+                .phone(candidate.getPhone())
+                .currentJobTitle(candidate.getCurrentJob())
+                .resumes(resumeResponses)
+                .skills(skillResponses)
+                .build();
     }
 }

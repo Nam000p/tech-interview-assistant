@@ -5,7 +5,6 @@ import com.namdx.identity.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +22,7 @@ public class UserController {
     }
 
     @QueryMapping
-    @PreAuthorize("hasAuthority(T(com.namdx.identity.enums.RoleName).ROLE_ADMIN.name())")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public Page<UserResponse> getAllUsers(@Argument int page, @Argument int size) {
         return userService.getAllUsers(PageRequest.of(page, size));
     }

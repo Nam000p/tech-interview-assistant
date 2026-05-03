@@ -1,21 +1,15 @@
-enum RoleName {
-    ROLE_ADMIN
-    ROLE_RECRUITER
-    ROLE_CANDIDATE
-}
-
 type UserResponse {
     id: ID!
     email: String!
     fullName: String!
-    roles: [RoleName!]!
+    roles: [String!]!
     permissions: [String!]!
-    createdAt: String!
+    createdAt: String
 }
 
 type UserPage {
     content: [UserResponse!]!
-    totalPage: Int!
+    totalPages: Int!
     totalElements: Float!
     size: Int!
     number: Int!
@@ -48,7 +42,7 @@ type Query {
 type Mutation {
     register(request: RegistrationRequest!): UserResponse
 
-    login(request: LoginRequest!): UserResponse
+    login(request: LoginRequest!): AuthResponse
 
     logout: String
 }

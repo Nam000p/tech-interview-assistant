@@ -1,0 +1,65 @@
+scalar JSON
+
+type Query {
+    getCandidateById(id: ID!): CandidateResponse
+    getCandidateByUserId: CandidateResponse
+}
+
+type Mutation {
+    createCandidate(request: CandidateCreateRequest!): CandidateResponse
+    updateCandidate(id: ID!, request: CandidateUpdateRequest!): CandidateResponse
+    deleteCandidate(id: ID!): Boolean
+
+    uploadResume(filePath: String!, extractedText: String!): ResumeResponse
+    updateResume(id: ID!, request: ResumeUpdateRequest!): ResumeResponse
+    deleteResume(id: ID!): Boolean
+
+    addSkills(candidateId: ID!, requests: [SkillRequest!]!): [SkillResponse]
+    deleteSkill(id: ID!): Boolean
+}
+
+type CandidateResponse {
+    id: ID!
+    userId: ID!
+    fullName: String!
+    phone: String
+    currentJobTitle: String
+    resumes: [ResumeResponse]
+    skills: [SkillResponse]
+}
+
+type ResumeResponse {
+    id: ID!
+    filePath: String!
+    extractedText: String
+    parsedData: JSON
+    uploadedAt: String
+}
+
+type SkillResponse {
+    id: ID!
+    skillName: String!
+    expYears: Int
+}
+
+input CandidateCreateRequest {
+    fullName: String!
+    phone: String
+    currentJob: String
+}
+
+input CandidateUpdateRequest {
+    fullName: String!
+    phone: String
+    currentJob: String
+}
+
+input ResumeUpdateRequest {
+    extractedText: String!
+    parsedData: JSON!
+}
+
+input SkillRequest {
+    skillName: String!
+    expYears: Int
+}

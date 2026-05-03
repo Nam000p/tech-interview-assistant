@@ -9,8 +9,6 @@ import com.namdx.identity.enums.RoleName;
 import com.namdx.identity.mapper.UserMapper;
 import com.namdx.identity.repository.RoleRepository;
 import com.namdx.identity.repository.UserRepository;
-import com.namdx.identity.security.CustomUserDetails;
-import com.namdx.identity.security.UserPrincipal;
 import com.namdx.identity.service.AuthService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,15 +31,10 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
-
     private final RoleRepository roleRepository;
-
     private final PasswordEncoder passwordEncoder;
-
     private final AuthenticationManager authenticationManager;
-
     private final SecurityContextRepository securityContextRepository;
-
     private final UserMapper userMapper;
 
     @Override
@@ -52,7 +45,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         Role candidateRole = roleRepository.findByName(RoleName.ROLE_CANDIDATE)
-                .orElseThrow(() -> new EntityNotFoundException("Default Role ROLE_CANDIDATE not found in database!"));
+                .orElseThrow(() -> new EntityNotFoundException("Default Role ROLE_CANDIDATE not found!"));
 
         User user = User.builder()
                 .email(request.email())
@@ -68,16 +61,18 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public UserResponse login(LoginRequest request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
         try {
-            Authentication authentication = authenticationManager.authenticate(
+            Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
             );
-            SecurityContext context = SecurityContextHolder.getContext();
-            context.setAuthentication(authentication);
-            SecurityContextHolder.setContext(context);
-            securityContextRepository.saveContext(SecurityContextHolder.getContext(), servletRequest, servletResponse);
 
-            UserPrincipal userPrincipal = ((CustomUserDetails) authentication.getPrincipal()).userPrincipal();
-            return userMapper.mapFromPrincipal(userPrincipal);
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(auth);
+            securityContextRepository.saveContext(context, servletRequest, servletResponse);
+
+            User user = userRepository.findByEmail(request.email())
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+            return userMapper.mapToResponse(user);
         } catch (Exception e) {
             throw new BadCredentialsException("Invalid email or password!");
         }

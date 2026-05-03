@@ -2,6 +2,7 @@ package com.namdx.identity.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.OffsetDateTime;
 import java.util.HashSet;
@@ -29,7 +30,8 @@ public class User {
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
+    @CreationTimestamp
+    @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
     @ManyToMany(fetch = FetchType.LAZY)

@@ -1,12 +1,13 @@
 package com.namdx.identity.mapper;
 
+import com.namdx.common.security.UserPrincipal;
 import com.namdx.identity.dto.user.UserResponse;
 import com.namdx.identity.entity.Permission;
 import com.namdx.identity.entity.User;
-import com.namdx.identity.security.UserPrincipal;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -36,12 +37,19 @@ public class UserMapper {
         if (principal == null) {
             return null;
         }
-        return UserResponse.builder()
-                .id(principal.id())
-                .email(principal.email())
-                .fullName(principal.fullName())
-                .roles(principal.roles())
-                .permissions(principal.permissions())
-                .build();
+
+        UUID id = null;
+        if (principal.getId() != null) {
+            id = UUID.fromString(principal.getId());
+        }
+
+        return new UserResponse(
+            id,
+            principal.getEmail(),
+            principal.getFullName(),
+            principal.getRoles(),
+            principal.getPermissions(),
+            java.time.OffsetDateTime.now()
+        );
     }
 }

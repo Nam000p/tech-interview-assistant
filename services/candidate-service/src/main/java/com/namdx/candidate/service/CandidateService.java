@@ -1,20 +1,19 @@
 package com.namdx.candidate.service;
 
-import com.namdx.candidate.dto.CandidateRequest;
-import com.namdx.candidate.dto.CandidateResponse;
+import com.namdx.candidate.dto.candidate.CandidateCreateRequest;
+import com.namdx.candidate.dto.candidate.CandidateResponse;
+import com.namdx.candidate.dto.candidate.CandidateUpdateRequest;
 
 import java.util.UUID;
 
 public interface CandidateService {
-    CandidateResponse createProfile(CandidateRequest request);
+    CandidateResponse createProfile(CandidateCreateRequest request, UUID uuid);
 
     CandidateResponse getProfileById(UUID id);
 
     CandidateResponse getProfileByUserId(UUID userId);
 
-    CandidateResponse updateProfile(UUID id, CandidateRequest request);
+    CandidateResponse updateProfile(UUID id, CandidateUpdateRequest request);
 
-    void deleteProfile(UUID id);
-
-    void uploadResume(UUID candidateId, String filePath, String extractedText);
+    void deleteProfile(UUID id, String userId);
 }

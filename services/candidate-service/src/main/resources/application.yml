@@ -1,5 +1,9 @@
 server:
   port: 8082
+  servlet:
+    session:
+      cookie:
+        name: IDENTITY_SESSION
 
 spring:
   application:
@@ -22,6 +26,7 @@ spring:
     url: jdbc:postgresql://localhost:5433/interview_db
     username: namdx
     password: password123
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
@@ -29,6 +34,8 @@ spring:
     properties:
       hibernate:
         default_schema: candidate_schema
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
 
   flyway:
     enabled: true
@@ -36,12 +43,33 @@ spring:
     schemas: candidate_schema
     default-schema: candidate_schema
     locations: classpath:db/migration
+    baseline-on-migrate: true
 
-dgs:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+
+  session:
+    store-type: redis
+    redis:
+      namespace: "interview:session"
+      flush-mode: on_save
+      save-mode: always
+
   graphql:
-    path: /graphql
+    show-exceptions: true
+    graphiql:
+      enabled: true
+    schema:
+      introspection:
+        enabled: true
+      locations: "classpath:graphql/"
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true

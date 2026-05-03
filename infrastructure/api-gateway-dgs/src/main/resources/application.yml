@@ -8,7 +8,7 @@ spring:
   data:
     redis:
       host: localhost
-      port: 6337
+      port: 6379
 
   cloud:
     gateway:
@@ -27,11 +27,14 @@ spring:
           uri: lb://CANDIDATE-SERVICE
           predicates:
             - Path=/candidates/**
-
+          filters:
+            - RewritePath=/candidates/(?<segment>.*), /$\{segment}
         - id: interview-service
           uri: lb://INTERVIEW-SERVICE
           predicates:
             - Path=/interviews/**
+      default-filters:
+        - PreserveHostHeader
 
 eureka:
   client:
